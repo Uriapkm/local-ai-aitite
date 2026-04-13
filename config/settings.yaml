@@ -24,14 +24,15 @@ audio:
   silence_threshold: 0.5        # Umbral para detectar silencio
 
 # --------------------------------------------
-# LLM - Gemma 4
+# LLM - Gemma 4 Multimodal
 # --------------------------------------------
 llm:
-  model: "gemma4:4b-instruct-q4_K_M"  # Modelo principal
-  context_length: 8192                # Ventana de contexto
+  model: "gemma4:4b-instruct-q4_K_M"  # Modelo multimodal nativo
+  context_length: 128000              # Ventana de contexto nativa de Gemma 4
   temperature: 0.7                    # Creatividad (0.0 = determinista, 1.0 = creativo)
   max_tokens: 512                     # Máximo de tokens en respuesta
   ollama_host: "http://localhost:11434"  # Endpoint de Ollama
+  use_vulkan: true                    # Usar Vulkan para RDNA2 (BC250) en lugar de ROCm
 
 # --------------------------------------------
 # VISIÓN - Cámara y TV

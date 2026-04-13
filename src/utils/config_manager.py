@@ -39,12 +39,13 @@ class AudioConfig(BaseSettings):
 
 
 class LLMConfig(BaseSettings):
-    """Configuración del LLM (Gemma 4 vía Ollama)"""
-    model: str = Field(default="gemma4:4b-instruct-q4_K_M", description="Modelo de lenguaje")
-    context_length: int = Field(default=8192, description="Ventana de contexto")
+    """Configuración del LLM (Gemma 4 multimodal vía Ollama)"""
+    model: str = Field(default="gemma4:4b-instruct-q4_K_M", description="Modelo de lenguaje multimodal")
+    context_length: int = Field(default=128000, description="Ventana de contexto nativa de Gemma 4")
     temperature: float = Field(default=0.7, description="Creatividad (0.0-2.0)")
     max_tokens: int = Field(default=512, description="Máximo tokens en respuesta")
     ollama_host: str = Field(default="http://localhost:11434", description="Endpoint de Ollama")
+    use_vulkan: bool = Field(default=True, description="Usar Vulkan para RDNA2 en lugar de ROCm")
     
     model_config = SettingsConfigDict(
         extra='ignore',

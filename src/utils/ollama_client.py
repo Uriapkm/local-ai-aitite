@@ -12,13 +12,15 @@ from pathlib import Path
 class OllamaClient:
     """
     Cliente para interactuar con Ollama API
-    Soporta modelos de texto y visión multimodal
+    Soporta modelos de texto y visión multimodal nativa (Gemma 4)
+    Optimizado para AMD RDNA2 con Vulkan
     """
     
     def __init__(self, 
                  host: str = "http://localhost:11434",
                  model: str = "gemma4:4b-instruct-q4_K_M",
-                 timeout: int = 120):
+                 timeout: int = 120,
+                 use_vulkan: bool = True):
         """
         Inicializa cliente Ollama
         
@@ -26,10 +28,12 @@ class OllamaClient:
             host: URL del servidor Ollama
             model: Nombre del modelo a usar
             timeout: Timeout máximo en segundos para respuestas
+            use_vulkan: Si True, usa Vulkan para RDNA2 (recomendado para BC250)
         """
         self.host = host.rstrip('/')
         self.model = model
         self.timeout = timeout
+        self.use_vulkan = use_vulkan
         
         # Verificar conexión inicial
         self._check_connection()
@@ -37,6 +41,7 @@ class OllamaClient:
         print(f"🧠 OllamaClient inicializado:")
         print(f"   - Host: {self.host}")
         print(f"   - Modelo: {self.model}")
+        print(f"   - Vulkan: {'✅' if use_vulkan else '❌'} (ROCm si False)")
     
     def _check_connection(self) -> bool:
         """Verifica que Ollama esté disponible"""
