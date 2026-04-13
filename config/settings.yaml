@@ -1,0 +1,95 @@
+# ============================================
+# CONFIGURACIÓN - Abuelo IA Assistant
+# ============================================
+
+# --------------------------------------------
+# HARDWARE - Arduino
+# --------------------------------------------
+arduino:
+  port: "/dev/ttyUSB0"          # Puerto serial del Arduino (ajustar según sistema)
+  baud_rate: 9600
+  button_pin: 2                 # Pin del botón físico
+  ir_led_pin: 3                 # Pin del LED IR
+
+# --------------------------------------------
+# AUDIO - STT y TTS
+# --------------------------------------------
+audio:
+  whisper_model: "small"        # tiny, base, small, medium, large
+  whisper_device: "auto"        # cpu, cuda, auto
+  whisper_language: "es"        # Idioma principal
+  piper_voice: "es_ES-carlfm-medium"  # Voz en español (descargar de piper-voices)
+  piper_data_dir: "./data/piper_voices"
+  sample_rate: 16000            # Frecuencia de muestreo para grabación
+  silence_threshold: 0.5        # Umbral para detectar silencio
+
+# --------------------------------------------
+# LLM - Gemma 4
+# --------------------------------------------
+llm:
+  model: "gemma4:4b-instruct-q4_K_M"  # Modelo principal
+  context_length: 8192                # Ventana de contexto
+  temperature: 0.7                    # Creatividad (0.0 = determinista, 1.0 = creativo)
+  max_tokens: 512                     # Máximo de tokens en respuesta
+  ollama_host: "http://localhost:11434"  # Endpoint de Ollama
+
+# --------------------------------------------
+# VISIÓN - Cámara y TV
+# --------------------------------------------
+vision:
+  enabled: true
+  camera_index: 0               # Índice de la cámara web (0 = primera cámara)
+  resolution_width: 1280        # Resolución de captura
+  resolution_height: 720
+  capture_delay: 0.5            # Segundos de espera antes de capturar
+  tv_screen_roi: null           # Región de interés (x, y, width, height) o null para toda la imagen
+
+# --------------------------------------------
+# TV - Configuración específica
+# --------------------------------------------
+tv:
+  brand: "Samsung"              # Marca de la TV (para códigos IR)
+  pc_hdmi_port: "HDMI1"         # Puerto HDMI donde está conectado el PC
+  tv_hdmi_port: "HDMI2"         # Puerto HDMI de la TV (input nativo)
+  mute_on_press: true           # Muteear al pulsar botón
+  unmute_on_release: true       # Desmuteear al soltar botón
+  volume_restore_delay: 2       # Segundos de espera antes de restaurar volumen
+
+# --------------------------------------------
+# YOUTUBE / NAVEGADOR
+# --------------------------------------------
+youtube:
+  browser: "brave"              # brave, chrome, firefox
+  kiosk_mode: false             # Modo pantalla completa sin controles
+  default_quality: "1080p"      # Calidad preferida
+  save_history: true            # Guardar historial de videos vistos
+  history_db: "./data/youtube_history.db"
+
+# --------------------------------------------
+# MEMORIA - Historial y preferencias
+# --------------------------------------------
+memory:
+  enabled: true
+  db_path: "./data/abuelo_memory.db"
+  max_conversation_history: 20  # Número máximo de mensajes en historial reciente
+  save_preferences: true        # Recordar preferencias del usuario
+  auto_suggest_interval: 3600   # Segundos entre sugerencias automáticas (si está inactivo)
+
+# --------------------------------------------
+# INTERFAZ - Pantalla y feedback visual
+# --------------------------------------------
+interface:
+  show_subtitles: true          # Mostrar subtítulos de lo que dice la IA
+  subtitle_font_size: 48        # Tamaño de fuente para subtítulos
+  subtitle_position: "bottom"   # top, bottom, center
+  show_status_indicator: true   # Mostrar estado (escuchando, pensando, etc.)
+  theme: "dark"                 # light, dark
+
+# --------------------------------------------
+# SISTEMA - Logs y debug
+# --------------------------------------------
+system:
+  log_level: "INFO"             # DEBUG, INFO, WARNING, ERROR
+  log_file: "./logs/abuelo_agent.log"
+  enable_debug_mode: false      # Modo debug con más prints
+  auto_restart_on_error: true   # Reiniciar automáticamente si hay error crítico
