@@ -17,7 +17,7 @@ ollama>=0.1.0             # Cliente oficial de Ollama para Python
 # AUDIO - STT y TTS
 # ==========================================
 faster-whisper>=1.0.0     # Speech-to-Text optimizado (CTranslate2)
-pyaudio>=0.2.14           # Captura de audio en tiempo real
+sounddevice>=0.4.6        # Captura y reproducción de audio (reemplaza pyaudio)
 webrtcvad>=2.0.10         # Detección de voz activa (VAD)
 
 # TTS se ejecuta como servicio externo (Piper), solo necesitamos subprocess
@@ -34,13 +34,15 @@ pillow>=10.0.0                 # Manipulación básica de imágenes
 # HARDWARE - Arduino e IR
 # ==========================================
 pyserial>=3.5             # Comunicación serial con Arduino
-gpiozero>=2.0             # Control GPIO (si se usa directamente)
+# gpiozero ELIMINADO: Es para Raspberry Pi, no aplica en PC con Bazzite
 
 # ==========================================
 # WEB - YouTube y Navegador
 # ==========================================
 selenium>=4.15.0          # Automatización de Brave Browser
 webdriver-manager>=4.0.0  # Gestión automática de drivers
+pyautogui>=0.9.54         # Control de teclado/ratón para YouTube
+python-xlib>=0.33         # Requerido por PyAutoGUI en Linux
 yt-dlp>=2024.0.0          # Búsqueda y metadata de YouTube (opcional)
 requests>=2.31.0          # Peticiones HTTP
 

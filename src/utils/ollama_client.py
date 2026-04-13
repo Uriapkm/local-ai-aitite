@@ -160,6 +160,70 @@ class OllamaClient:
             print(f"❌ Error en streaming: {e}")
             yield {"error": str(e)}
     
+    def generate_multimodal(self,
+                           model: str,
+                           prompt: str,
+                           image_base64: str,
+                           system_prompt: Optional[str] = None,
+                           temperature: float = 0.7,
+                           max_tokens: int = 512,
+                           stream: bool = False) -> Dict[str, Any]:
+        """
+        Genera respuesta con entrada multimodal (texto + imagen)
+        
+        Args:
+            model: Modelo a usar
+            prompt: Prompt del usuario
+            image_base64: Imagen en base64
+            system_prompt: Prompt de sistema
+            temperature: Temperatura
+            max_tokens: Máximo de tokens
+            stream: Si True, devuelve generador
+            
+        Returns:
+            Dict con respuesta del modelo
+        """
+        # Construir mensaje con imagen
+        messages = []
+        
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        
+        messages.append({
+            "role": "user",
+            "content": prompt,
+            "images": [image_base64]
+        })
+        
+        payload = {
+            "model": model,
+            "messages": messages,
+            "stream": stream,
+            "options": {
+                "temperature": temperature,
+                "num_predict": max_tokens
+            }
+        }
+        
+        try:
+            if stream:
+                return self._generate_stream(payload)
+            else:
+                response = requests.post(
+                    f"{self.host}/api/chat",
+                    json=payload,
+                    timeout=self.timeout
+                )
+                response.raise_for_status()
+                return response.json()
+            
+        except requests.exceptions.Timeout:
+            print(f"❌ Timeout esperando respuesta de Ollama ({self.timeout}s)")
+            return {"error": "timeout", "response": ""}
+        except Exception as e:
+            print(f"❌ Error en generación multimodal: {e}")
+            return {"error": str(e), "response": ""}
+    
     def generate_with_image(self,
                            prompt: str,
                            image_path: str,
@@ -168,6 +232,7 @@ class OllamaClient:
                            max_tokens: int = 512) -> Dict[str, Any]:
         """
         Genera respuesta con entrada multimodal (texto + imagen)
+        Método legacy, usar generate_multimodal en su lugar
         
         Args:
             prompt: Prompt del usuario
@@ -189,40 +254,14 @@ class OllamaClient:
             print(f"❌ Error leyendo imagen: {e}")
             return {"error": str(e), "response": ""}
         
-        # Construir mensaje con imagen
-        messages = []
-        
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        
-        messages.append({
-            "role": "user",
-            "content": prompt,
-            "images": [image_base64]
-        })
-        
-        payload = {
-            "model": self.model,
-            "messages": messages,
-            "stream": False,
-            "options": {
-                "temperature": temperature,
-                "num_predict": max_tokens
-            }
-        }
-        
-        try:
-            response = requests.post(
-                f"{self.host}/api/chat",
-                json=payload,
-                timeout=self.timeout
-            )
-            response.raise_for_status()
-            return response.json()
-            
-        except Exception as e:
-            print(f"❌ Error en generación con imagen: {e}")
-            return {"error": str(e), "response": ""}
+        return self.generate_multimodal(
+            model=self.model,
+            prompt=prompt,
+            image_base64=image_base64,
+            system_prompt=system_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
     
     def pull_model(self, model_name: Optional[str] = None) -> bool:
         """
@@ -328,6 +367,7 @@ Ofrece ayuda relevante sin ser intrusivo."""
 def parse_llm_response(response: Dict[str, Any]) -> Dict[str, Any]:
     """
     Parsea respuesta del LLM para extraer acciones
+    Ahora soporta tanto JSON estructurado como texto libre (fallback)
     
     Args:
         response: Respuesta cruda de Ollama
@@ -335,19 +375,61 @@ def parse_llm_response(response: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dict con 'text', 'action', 'parameters'
     """
-    text = response.get('message', {}).get('content', '')
+    import json
     
-    # Intentar extraer acción estructurada (si el LLM devuelve JSON)
+    text = response.get('message', {}).get('content', '')
     action = "REPLY"
     parameters = {}
     
-    # Buscar patrones como "ACTION: IR_SEND" o similar
-    if "IR_SEND" in text.upper():
-        action = "IR_SEND"
-    elif "YOUTUBE" in text.upper() or "VIDEO" in text.upper():
-        action = "YOUTUBE_SEARCH"
-    elif "HDMI" in text.upper():
-        action = "SWITCH_HDMI_PC"
+    # Intento 1: Buscar JSON explícito en la respuesta
+    try:
+        # Buscar bloques JSON entre llaves
+        import re
+        json_pattern = r'\{[^{}]*"action"[^{}]*\}'
+        json_matches = re.findall(json_pattern, text, re.DOTALL)
+        
+        if json_matches:
+            # Intentar parsear el primer JSON encontrado
+            for json_str in json_matches:
+                try:
+                    parsed_json = json.loads(json_str)
+                    action = parsed_json.get('action', 'REPLY').upper()
+                    parameters = parsed_json.get('parameters', {})
+                    # Extraer texto de respuesta si existe
+                    if 'text' in parsed_json:
+                        text = parsed_json['text']
+                    break
+                except json.JSONDecodeError:
+                    continue
+    except Exception as e:
+        print(f"⚠️ Error parseando JSON: {e}")
+    
+    # Intento 2: Fallback a patrones de texto simple (compatibilidad)
+    if action == "REPLY":
+        text_upper = text.upper()
+        
+        if "IR_SEND" in text_upper or "ENVIAR IR" in text_upper:
+            action = "IR_SEND"
+            # Intentar extraer comando
+            for cmd in ["POWER", "VOL_UP", "VOL_DOWN", "MUTE", "HDMI"]:
+                if cmd in text_upper:
+                    parameters['command'] = cmd
+                    break
+                    
+        elif "YOUTUBE" in text_upper or "VIDEO" in text_upper or "BUSCAR EN YOUTUBE" in text_upper:
+            action = "YOUTUBE_SEARCH"
+            # Extraer query si está en formato estructurado
+            if 'query' in parameters:
+                pass  # Ya está en parameters
+            else:
+                # Usar el texto completo como query
+                parameters['query'] = text
+                
+        elif "HDMI" in text_upper or "CAMBIAR ENTRADA" in text_upper:
+            action = "SWITCH_HDMI_PC"
+            
+        elif "TV_STATE" in text_upper or "ESTADO TV" in text_upper:
+            action = "GET_TV_STATE"
     
     return {
         "text": text,
