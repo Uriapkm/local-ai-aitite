@@ -1,33 +1,18 @@
-```gitignore
-# Dependencies
-.venv/
-venv/
+```
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Logs and temporary files
-*.log
-*.tmp
-*.swp
-
-# Environment variables
+# Environment
 .env
 .env.local
-*.env.*
+.env.*
 
-# Editors
-.vscode/
-.idea/
+# Documentation
+docs/
 
-# Coverage reports
-.coverage
-coverage/
-htmlcov/
-
-# Build artifacts
-build/
-dist/
-*.egg-info/
+# Scripts
+scripts/
 ```
