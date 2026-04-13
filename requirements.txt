@@ -75,3 +75,11 @@ flake8>=6.1.0             # Linting
 # Nota: Las librerías de aceleración GPU (ROCm/Vulkan) 
 # se instalan a nivel de sistema, no vía pip.
 # Ver scripts/install.sh para detalles.
+
+# ==========================================
+# VULKAN PARA AMD RDNA2 (BC250)
+# ==========================================
+# Las siguientes variables se configuran en .env para optimizar Gemma 4:
+# VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/radeon_icd.x86_64.json
+# RADV_PERFTEST=sam,nggc
+# MESA_GL_VERSION_OVERRIDE=4.6

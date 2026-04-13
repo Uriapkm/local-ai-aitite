@@ -55,11 +55,12 @@ class AbueloAgent:
             piper_data_dir=self.config.audio.piper_data_dir
         )
         
-        # Inicializar cliente Ollama
+        # Inicializar cliente Ollama con soporte Vulkan para RDNA2
         self.llm = OllamaClient(
             host=self.config.llm.ollama_host,
             model=self.config.llm.model,
-            timeout=120
+            timeout=120,
+            use_vulkan=self.config.llm.use_vulkan
         )
         
         # Inicializar grabadora con trigger de botón

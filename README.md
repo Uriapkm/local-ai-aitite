@@ -107,12 +107,29 @@ cd abuelo-ia
 chmod +x scripts/install.sh
 ./scripts/install.sh
 
-# Iniciar servicios
-docker compose up -d
+# Configurar el sistema (RECOMENDADO para primera vez)
+chmod +x scripts/configure.sh
+./scripts/configure.sh
 
-# Ver logs
-docker compose logs -f
+# Revisar y ajustar configuración
+nano .env  # O usa tu editor favorito
+
+# Iniciar servicios
+ollama serve &  # En segundo plano
+source venv/bin/activate
+python -m src.agent.abuelo_agent
 ```
+
+### 🔧 Configuración Detallada
+
+Para una guía completa de configuración, consulta: **`docs/GUIA_CONFIGURACION.md`**
+
+**Archivos de configuración:**
+- `.env.example` - Plantilla con todas las variables disponibles
+- `.env` - Tu configuración específica (crear desde la plantilla)
+- `config/settings.yaml` - Configuración general del sistema
+
+**Prioridad:** Variables de entorno (.env) > YAML > Valores por defecto
 
 ## 🎭 Personalidad de la IA
 
