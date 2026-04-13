@@ -320,20 +320,116 @@ class AbueloAgent:
         return success
     
     def _tool_youtube_search(self, query: str) -> bool:
-        """Busca y reproduce un video en YouTube (Brave)."""
+        """Busca y reproduce un video en YouTube (Brave + Selenium + PyAutoGUI)."""
         print(f"▶️ Herramienta YOUTUBE_SEARCH: {query}")
         
-        # MVP: Responder que está buscando
-        response_text = f"Vale, buscando '{query}' en YouTube. Un momento..."
-        self._tool_reply(response_text)
-        
-        # Guardar estadística
-        if self.memory_manager:
-            self.memory_manager.increment_youtube_searches()
-        
-        # TODO: Implementar con Selenium o automatización de teclado
-        # Por ahora solo notificamos
-        return True
+        try:
+            from selenium import webdriver
+            from selenium.webdriver.common.by import By
+            from selenium.webdriver.common.keys import Keys
+            from selenium.webdriver.support.ui import WebDriverWait
+            from selenium.webdriver.support import expected_conditions as EC
+            from urllib.parse import quote_plus
+            import pyautogui
+            import time
+            
+            # Configurar opciones de Chrome/Brave
+            options = webdriver.ChromeOptions()
+            
+            # Intentar Brave primero, fallback a Chrome
+            brave_paths = [
+                "/usr/bin/brave",
+                "/usr/bin/brave-browser",
+                "/usr/bin/google-chrome",
+                "/usr/bin/chromium"
+            ]
+            
+            brave_binary = None
+            for path in brave_paths:
+                if os.path.exists(path):
+                    brave_binary = path
+                    break
+            
+            if brave_binary:
+                options.binary_location = brave_binary
+                print(f"   🌐 Usando navegador: {brave_binary}")
+            else:
+                print("   ⚠️ No se encontró Brave/Chrome, usando Chrome por defecto")
+            
+            # Opciones para modo kiosk (pantalla completa)
+            options.add_argument("--start-maximized")
+            options.add_argument("--no-first-run")
+            options.add_argument("--disable-infobars")
+            options.add_argument("--disable-notifications")
+            
+            # Iniciar driver
+            print("   🚗 Iniciando WebDriver...")
+            driver = webdriver.Chrome(options=options)
+            driver.set_window_size(1920, 1080)
+            
+            # Construir URL de búsqueda
+            search_url = f"https://www.youtube.com/results?search_query={quote_plus(query)}"
+            print(f"   🔍 Buscando: {search_url}")
+            
+            # Navegar a YouTube
+            driver.get(search_url)
+            
+            # Esperar a que carguen los resultados
+            print("   ⏳ Esperando resultados...")
+            wait = WebDriverWait(driver, 10)
+            try:
+                # Esperar primer resultado de video
+                first_video = wait.until(
+                    EC.element_to_be_clickable(
+                        (By.CSS_SELECTOR, "ytd-video-renderer:first-of-type")
+                    )
+                )
+                
+                # Hacer click en el primer video
+                print("   ▶️ Click en primer video...")
+                first_video.click()
+                
+                # Esperar que cargue el video
+                time.sleep(3)
+                
+                # Pantalla completa con 'f'
+                print("   📺 Pantalla completa...")
+                pyautogui.press('f')
+                
+                # Guardar estadística
+                if self.memory_manager:
+                    self.memory_manager.increment_youtube_searches()
+                
+                print("   ✅ Video reproduciéndose")
+                return True
+                
+            except Exception as e:
+                print(f"   ⚠️ Error encontrando video: {e}")
+                # Fallback: intentar con teclado
+                print("   🎹 Usando control por teclado...")
+                time.sleep(2)
+                pyautogui.press('tab', presses=3)  # Navegar al primer video
+                time.sleep(0.5)
+                pyautogui.press('enter')
+                time.sleep(2)
+                pyautogui.press('f')  # Pantalla completa
+                
+                if self.memory_manager:
+                    self.memory_manager.increment_youtube_searches()
+                
+                return True
+                
+        except ImportError as e:
+            print(f"   ❌ Error: selenium o pyautogui no instalados ({e})")
+            response_text = "Vale, buscando en YouTube... (necesito instalar dependencias)"
+            self._tool_reply(response_text)
+            return False
+            
+        except Exception as e:
+            print(f"   ❌ Error en YouTube search: {e}")
+            response_text = "Tuve un problema buscando en YouTube. ¿Intentamos de nuevo?"
+            self._tool_reply(response_text)
+            return False
     
     def _tool_reply(self, text: str) -> bool:
         """Responde al usuario hablando (TTS)."""
@@ -347,9 +443,24 @@ class AbueloAgent:
             success = self.audio.synthesize(text, output_path)
             
             if success and os.path.exists(output_path):
-                # 2. Reproducir audio por altavoces del PC
+                # 2. Reproducir audio por altavoces del PC (NO bloqueante)
                 print("🔊 Reproduciendo respuesta...")
-                play_success = self._play_audio_file(output_path)
+                
+                # Usar reproductor no-bloqueante desde nuevo módulo
+                from src.audio.audio_player import play_audio_async, stop_audio_playback
+                
+                # Callback cuando termine de hablar
+                def on_speech_finished():
+                    print("✅ Speech finished")
+                    # Aquí se podría restaurar volumen de TV si estaba muteada
+                
+                play_success = play_audio_async(output_path, on_finish=on_speech_finished)
+                
+                # Esperar a que termine (pero sin bloquear completamente)
+                from src.audio.audio_player import get_audio_player
+                player = get_audio_player()
+                player.wait_until_finished(timeout=30.0)  # Timeout de 30s
+                
                 return play_success
             else:
                 print("⚠️ No se pudo generar audio, mostrando solo texto")
