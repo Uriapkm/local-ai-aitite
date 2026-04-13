@@ -1,53 +1,36 @@
-```
-# Environment files
-.env.local
-*.env.*
-
-# Logs and temporary files
-*.log
-*.tmp
-
-# Dependencies
-node_modules/
-venv/
-.venv/
+```gitignore
+# Python cache files
 __pycache__/
-.mypy_cache/
-.pytest_cache/
-dist/
-build/
-target/
-.gradle/
+*.pyc
+*.pyo
+*.pyd
 
-# Editors
-.vscode/
-.idea/
+# Local environment variables
+.env.local
 
-# System files
+# Temporary and backup files
+*.tmp
+*.swp
+*.swo
+
+# OS generated files
 .DS_Store
 Thumbs.db
 
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+# Logs
+*.log
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# MyPy cache
+.mypy_cache/
+
+# Pytest cache
+.pytest_cache/
+
+# Original rules preserved
+*.log
 ```
